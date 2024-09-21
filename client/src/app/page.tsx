@@ -4,7 +4,7 @@ import Link from "next/link";
 export default function Home() {
   return (
     <main>
-      <Link href="/login">Login</Link>
+      <Link href="/login" >Login</Link>
       <Link href="/register">Register</Link>
       <div className="w-[1000px] h-[1000px] bg-red-300">
         <Image
