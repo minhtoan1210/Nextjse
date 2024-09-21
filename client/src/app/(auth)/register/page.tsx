@@ -1,11 +1,11 @@
-import { ModeToggle } from "@/components/ModeToggle";
+import RegisterForm from "@/app/(auth)/register/register-form";
 import React from "react";
 
 export default function Register() {
   return (
     <div>
-      <ModeToggle />
       <h1>Register</h1>
+      <RegisterForm />
     </div>
   );
 }

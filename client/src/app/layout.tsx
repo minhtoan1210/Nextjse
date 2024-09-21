@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
-import { ThemeProvider } from "@/components/theme-provider"
+import { ThemeProvider } from "@/components/theme-provider";
 import { Roboto } from "next/font/google";
 import "./globals.css";
+import Header from "@/components/header";
 
 const inter = Roboto({ subsets: ["vietnamese"], weight: ["100", "300"] });
 
@@ -25,6 +26,7 @@ export default function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
+          <Header />
           {children}
         </ThemeProvider>
       </body>
