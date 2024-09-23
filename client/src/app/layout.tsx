@@ -3,6 +3,9 @@ import { ThemeProvider } from "@/components/theme-provider";
 import { Roboto } from "next/font/google";
 import "./globals.css";
 import Header from "@/components/header";
+import { Toaster } from "@/components/ui/toaster";
+import { cookies } from "next/headers";
+import AppProvider from "@/app/AppProvider";
 
 const inter = Roboto({ subsets: ["vietnamese"], weight: ["100", "300"] });
 
@@ -16,10 +19,14 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  // Đoạn này sẽ lấy cookes từ serve để check xem có cookies không 
+  const cookieStore = cookies();
+  const sessionToken = cookieStore.get("sessionToken");
+
   return (
     <html lang="en" suppressHydrationWarning>
       <body className={inter.className}>
-        {" "}
+        <Toaster />
         <ThemeProvider
           attribute="class"
           defaultTheme="system"
@@ -27,7 +34,9 @@ export default function RootLayout({
           disableTransitionOnChange
         >
           <Header />
-          {children}
+          <AppProvider inititalSessionToken={sessionToken?.value}>
+            {children}
+          </AppProvider>
         </ThemeProvider>
       </body>
     </html>

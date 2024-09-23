@@ -5,7 +5,6 @@ export default function RootLayout({
 }>) {
   return (
     <main>
-      <div>Layout Login</div>
       {children}
     </main>
   );

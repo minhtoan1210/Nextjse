@@ -3,10 +3,7 @@
 import React from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
-import {
-  RegisterBody,
-  RegisterBodyType,
-} from "@/schemaValidations/auth.schema";
+import { LoginBody, LoginBodyType } from "@/schemaValidations/auth.schema";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -20,24 +17,25 @@ import {
 import { Input } from "@/components/ui/input";
 import envConfig from "@/config";
 import { useToast } from "@/hooks/use-toast";
+import { useAppContext } from "@/app/AppProvider";
 
-export default function RegisterForm() {
+export default function LoginForm() {
+
   const { toast } = useToast();
+  const { setSessionToken } = useAppContext()
 
-  const form = useForm<RegisterBodyType>({
-    resolver: zodResolver(RegisterBody),
+  const form = useForm<LoginBodyType>({
+    resolver: zodResolver(LoginBody),
     defaultValues: {
       email: "",
-      name: "",
       password: "",
-      confirmPassword: "",
     },
   });
 
-  async function onSubmit(values: RegisterBodyType) {
+  async function onSubmit(values: LoginBodyType) {
     try {
       const result = await fetch(
-        `${envConfig.NEXT_PUBLIC_API_ENDPOINT}/auth/register`,
+        `${envConfig.NEXT_PUBLIC_API_ENDPOINT}/auth/login`,
         {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(values),
@@ -49,6 +47,7 @@ export default function RegisterForm() {
           status: res.status,
           payload,
         };
+        console.log("data", data);
         // trong phần header ok nếu lỗi là false
         if (!res.ok) {
           throw data;
@@ -56,8 +55,28 @@ export default function RegisterForm() {
         return data;
       });
       toast({
-        description: result.payload.message
+        description: result.payload.message,
       });
+
+      const resultFromNextServer = await fetch("/api/auth", {
+        method: "POST",
+        body: JSON.stringify(result),
+        headers: {
+          "Content-Type": "application/json",
+        },
+      }).then(async (res) => {
+        const payload = await res.json();
+        const data = {
+          status: res.status,
+          payload,
+        };
+        if (!res.ok) {
+          throw data;
+        }
+        return data;
+      });
+      setSessionToken(resultFromNextServer.payload.data.token)
+
     } catch (error: any) {
       const errors = error.payload.errors as {
         field: string;
@@ -66,13 +85,10 @@ export default function RegisterForm() {
       const status = error.status as number;
       if (status === 422) {
         errors.forEach((error) => {
-          form.setError(
-            error.field as "name" | "email" | "password" | "confirmPassword",
-            {
-              type: "server",
-              message: error.message,
-            }
-          );
+          form.setError(error.field as "email" | "password", {
+            type: "server",
+            message: error.message,
+          });
         });
       } else {
         toast({
@@ -96,19 +112,6 @@ export default function RegisterForm() {
         >
           <FormField
             control={form.control}
-            name="name"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Name</FormLabel>
-                <FormControl>
-                  <Input placeholder="shadcn" {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          <FormField
-            control={form.control}
             name="email"
             render={({ field }) => (
               <FormItem>
@@ -128,23 +131,6 @@ export default function RegisterForm() {
                 <FormLabel>Password</FormLabel>
                 <FormControl>
                   <Input placeholder="Password" type="password" {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          <FormField
-            control={form.control}
-            name="confirmPassword"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>ConfirmPassword</FormLabel>
-                <FormControl>
-                  <Input
-                    placeholder="ConfirmPassword"
-                    type="password"
-                    {...field}
-                  />
                 </FormControl>
                 <FormMessage />
               </FormItem>
