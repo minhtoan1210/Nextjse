@@ -18,11 +18,13 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import envConfig from "@/config";
 import { useToast } from "@/hooks/use-toast";
+import authApiRequest from '@/apiRequests/auth'
+import { useRouter } from 'next/navigation'
 
 export default function RegisterForm() {
-  const { toast } = useToast();
+  const { toast } = useToast()
+  const router = useRouter()
 
   const form = useForm<RegisterBodyType>({
     resolver: zodResolver(RegisterBody),
@@ -36,28 +38,13 @@ export default function RegisterForm() {
 
   async function onSubmit(values: RegisterBodyType) {
     try {
-      const result = await fetch(
-        `${envConfig.NEXT_PUBLIC_API_ENDPOINT}/auth/register`,
-        {
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(values),
-          method: "POST",
-        }
-      ).then(async (res) => {
-        const payload = await res.json();
-        const data = {
-          status: res.status,
-          payload,
-        };
-        // trong phần header ok nếu lỗi là false
-        if (!res.ok) {
-          throw data;
-        }
-        return data;
-      });
+      const result = await authApiRequest.register(values)
       toast({
         description: result.payload.message
       });
+      await authApiRequest.auth({ sessionToken: result.payload.data.token })
+      router.push('/me')
+      
     } catch (error: any) {
       const errors = error.payload.errors as {
         field: string;

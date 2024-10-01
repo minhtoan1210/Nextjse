@@ -17,12 +17,12 @@ import {
 import { Input } from "@/components/ui/input";
 import envConfig from "@/config";
 import { useToast } from "@/hooks/use-toast";
-import { useAppContext } from "@/app/AppProvider";
+import authApiRequest from "@/apiRequests/auth";
+import { useRouter } from "next/navigation";
 
 export default function LoginForm() {
-
+  const router = useRouter();
   const { toast } = useToast();
-  const { setSessionToken } = useAppContext()
 
   const form = useForm<LoginBodyType>({
     resolver: zodResolver(LoginBody),
@@ -34,49 +34,51 @@ export default function LoginForm() {
 
   async function onSubmit(values: LoginBodyType) {
     try {
-      const result = await fetch(
-        `${envConfig.NEXT_PUBLIC_API_ENDPOINT}/auth/login`,
-        {
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(values),
-          method: "POST",
-        }
-      ).then(async (res) => {
-        const payload = await res.json();
-        const data = {
-          status: res.status,
-          payload,
-        };
-        console.log("data", data);
-        // trong phần header ok nếu lỗi là false
-        if (!res.ok) {
-          throw data;
-        }
-        return data;
-      });
+      // const result = await fetch(
+      //   `${envConfig.NEXT_PUBLIC_API_ENDPOINT}/auth/login`,
+      //   {
+      //     headers: { "Content-Type": "application/json" },
+      //     body: JSON.stringify(values),
+      //     method: "POST",
+      //   }
+      // ).then(async (res) => {
+      //   const payload = await res.json();
+      //   const data = {
+      //     status: res.status,
+      //     payload,
+      //   };
+      //   console.log("data", data);
+      //   // trong phần header ok nếu lỗi là false
+      //   if (!res.ok) {
+      //     throw data;
+      //   }
+      //   return data;
+      // });
+      const result = await authApiRequest.login(values);
       toast({
         description: result.payload.message,
       });
 
-      const resultFromNextServer = await fetch("/api/auth", {
-        method: "POST",
-        body: JSON.stringify(result),
-        headers: {
-          "Content-Type": "application/json",
-        },
-      }).then(async (res) => {
-        const payload = await res.json();
-        const data = {
-          status: res.status,
-          payload,
-        };
-        if (!res.ok) {
-          throw data;
-        }
-        return data;
-      });
-      setSessionToken(resultFromNextServer.payload.data.token)
-
+      // const resultFromNextServer = await fetch("/api/auth", {
+      //   method: "POST",
+      //   body: JSON.stringify(result),
+      //   headers: {
+      //     "Content-Type": "application/json",
+      //   },
+      // }).then(async (res) => {
+      //   const payload = await res.json();
+      //   const data = {
+      //     status: res.status,
+      //     payload,
+      //   };
+      //   if (!res.ok) {
+      //     throw data;
+      //   }
+      //   return data;
+      // });
+      // setSessionToken(resultFromNextServer.payload.data.token)
+      await authApiRequest.auth({ sessionToken: result.payload.data.token });
+      router.push("/me");
     } catch (error: any) {
       const errors = error.payload.errors as {
         field: string;

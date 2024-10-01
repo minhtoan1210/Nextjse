@@ -21,6 +21,7 @@ export function middleware(request: NextRequest) {
 }
 
 // See "Matching Paths" below to learn more
+//Phải ghi thẳng ra ko đc ... d0e63 gộp lại vì next ko cho tính toán
 export const config = {
-  matcher: [...privatePaths, ...authPaths]
+  matcher: ['/me', '/login', '/register']
 }
