@@ -16,11 +16,14 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import envConfig from "@/config";
-import { useToast } from "@/hooks/use-toast";
+import { useToast, toast } from "@/hooks/use-toast";
 import authApiRequest from "@/apiRequests/auth";
 import { useRouter } from "next/navigation";
+import { handleErrorApi } from '@/lib/utils'
+import { useState } from 'react'
 
 export default function LoginForm() {
+  const [loading, setLoading] = useState(false)
   const router = useRouter();
   const { toast } = useToast();
 
@@ -33,6 +36,8 @@ export default function LoginForm() {
   });
 
   async function onSubmit(values: LoginBodyType) {
+    if (loading) return
+    setLoading(true)
     try {
       // const result = await fetch(
       //   `${envConfig.NEXT_PUBLIC_API_ENDPOINT}/auth/login`,
@@ -54,6 +59,7 @@ export default function LoginForm() {
       //   }
       //   return data;
       // });
+      
       const result = await authApiRequest.login(values);
       toast({
         description: result.payload.message,
@@ -80,25 +86,32 @@ export default function LoginForm() {
       await authApiRequest.auth({ sessionToken: result.payload.data.token });
       router.push("/me");
     } catch (error: any) {
-      const errors = error.payload.errors as {
-        field: string;
-        message: string;
-      }[];
-      const status = error.status as number;
-      if (status === 422) {
-        errors.forEach((error) => {
-          form.setError(error.field as "email" | "password", {
-            type: "server",
-            message: error.message,
-          });
-        });
-      } else {
-        toast({
-          title: "Lỗi",
-          description: error.payload.message,
-          variant: "destructive",
-        });
-      }
+      // const errors = error.payload.errors as {
+      //   field: string;
+      //   message: string;
+      // }[];
+      // const status = error.status as number;
+      // if (status === 422) {
+      //   errors.forEach((error) => {
+      //     form.setError(error.field as "email" | "password", {
+      //       type: "server",
+      //       message: error.message,
+      //     });
+      //   });
+      // } else {
+      //   toast({
+      //     title: "Lỗi",
+      //     description: error.payload.message,
+      //     variant: "destructive",
+      //   });
+      // }
+      handleErrorApi({
+        error,
+        setError: form.setError
+      })
+    }
+    finally {
+      setLoading(false)
     }
   }
   return (

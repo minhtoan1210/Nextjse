@@ -1,4 +1,4 @@
-// Đây là nọi sẽ nhận api token từ client gửi lên serve 
+// Đây là nọi sẽ nhận api token từ client gửi lên serve và lưu vào 
 
 export async function POST(request: Request) {
     const res = await request.json()

@@ -5,9 +5,22 @@ type CustomOptions = Omit<RequestInit, 'method'> & {
   baseUrl?: string | undefined
 }
 
+const ENTITY_ERROR_STATUS = 422
+
+type EntityErrorPayload = {
+  message: string
+  errors: {
+    field: string
+    message: string
+  }[]
+}
+
 class HttpError extends Error {
   status: number
-  payload: any
+  payload: {
+    message: string
+    [key: string]: any
+  }
   constructor({ status, payload }: { status: number; payload: any }) {
     super('Http Error')
     this.status = status
@@ -15,6 +28,25 @@ class HttpError extends Error {
   }
 }
 
+// này là thiết lập interceptors khi nhận api về
+export class EntityError extends HttpError {
+  status: 422
+  payload: EntityErrorPayload
+  constructor({
+    status,
+    payload
+  }: {
+    status: 422
+    payload: EntityErrorPayload
+  }) {
+    super({ status, payload })
+    this.status = status
+    this.payload = payload
+  }
+}
+
+
+// này dùng cho phía ở client start
 class SessionToken {
   private token = ''
   get value() {
@@ -31,6 +63,8 @@ class SessionToken {
 
 export const clientSessionToken = new SessionToken()
 
+// này dùng cho phía ở client end
+
 const request = async <Response>(
   method: 'GET' | 'POST' | 'PUT' | 'DELETE',
   url: string,
@@ -43,6 +77,7 @@ const request = async <Response>(
       ? `Bearer ${clientSessionToken.value}`
       : ''
   }
+
   // Nếu không truyền baseUrl (hoặc baseUrl = undefined) thì lấy từ envConfig.NEXT_PUBLIC_API_ENDPOINT
   // Nếu truyền baseUrl thì lấy giá trị truyền vào, truyền vào '' thì đồng nghĩa với việc chúng ta gọi API đến Next.js Server
 
@@ -68,7 +103,16 @@ const request = async <Response>(
     payload
   }
   if (!res.ok) {
-    throw new HttpError(data)
+    if (res.status === ENTITY_ERROR_STATUS) {
+      throw new EntityError(
+        data as {
+          status: 422
+          payload: EntityErrorPayload
+        }
+      )
+    } else {
+      throw new HttpError(data)
+    }
   }
   if (['/auth/login', '/auth/register'].includes(url)) {
     clientSessionToken.value = (payload as LoginResType).data.token

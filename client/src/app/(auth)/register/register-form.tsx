@@ -19,12 +19,15 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
-import authApiRequest from '@/apiRequests/auth'
-import { useRouter } from 'next/navigation'
+import authApiRequest from "@/apiRequests/auth";
+import { useRouter } from "next/navigation";
+import { handleErrorApi } from "@/lib/utils";
+import { useState } from "react";
 
 export default function RegisterForm() {
-  const { toast } = useToast()
-  const router = useRouter()
+  const [loading, setLoading] = useState(false);
+  const { toast } = useToast();
+  const router = useRouter();
 
   const form = useForm<RegisterBodyType>({
     resolver: zodResolver(RegisterBody),
@@ -37,37 +40,44 @@ export default function RegisterForm() {
   });
 
   async function onSubmit(values: RegisterBodyType) {
+    if (loading) return;
+    setLoading(true);
     try {
-      const result = await authApiRequest.register(values)
+      const result = await authApiRequest.register(values);
       toast({
-        description: result.payload.message
+        description: result.payload.message,
       });
-      await authApiRequest.auth({ sessionToken: result.payload.data.token })
-      router.push('/me')
-      
+      await authApiRequest.auth({ sessionToken: result.payload.data.token });
+      router.push("/me");
     } catch (error: any) {
-      const errors = error.payload.errors as {
-        field: string;
-        message: string;
-      }[];
-      const status = error.status as number;
-      if (status === 422) {
-        errors.forEach((error) => {
-          form.setError(
-            error.field as "name" | "email" | "password" | "confirmPassword",
-            {
-              type: "server",
-              message: error.message,
-            }
-          );
-        });
-      } else {
-        toast({
-          title: "Lỗi",
-          description: error.payload.message,
-          variant: "destructive",
-        });
-      }
+      // const errors = error.payload.errors as {
+      //   field: string;
+      //   message: string;
+      // }[];
+      // const status = error.status as number;
+      // if (status === 422) {
+      //   errors.forEach((error) => {
+      //     form.setError(
+      //       error.field as "name" | "email" | "password" | "confirmPassword",
+      //       {
+      //         type: "server",
+      //         message: error.message,
+      //       }
+      //     );
+      //   });
+      // } else {
+      //   toast({
+      //     title: "Lỗi",
+      //     description: error.payload.message,
+      //     variant: "destructive",
+      //   });
+      // }
+      handleErrorApi({
+        error,
+        setError: form.setError,
+      });
+    } finally {
+      setLoading(false);
     }
   }
   return (
