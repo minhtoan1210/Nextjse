@@ -1,5 +1,6 @@
 import envConfig from '@/config'
 import { LoginResType } from '@/schemaValidations/auth.schema'
+import { normalizePath } from '@/lib/utils'
 
 type CustomOptions = Omit<RequestInit, 'method'> & {
   baseUrl?: string | undefined
@@ -15,7 +16,7 @@ type EntityErrorPayload = {
   }[]
 }
 
-class HttpError extends Error {
+export class HttpError extends Error {
   status: number
   payload: {
     message: string
@@ -114,11 +115,26 @@ const request = async <Response>(
       throw new HttpError(data)
     }
   }
-  if (['/auth/login', '/auth/register'].includes(url)) {
-    clientSessionToken.value = (payload as LoginResType).data.token
-  } else if ('/auth/logout'.includes(url)) {
-    clientSessionToken.value = ''
+
+  // Đảm bảo logic dưới đây chỉ chạy ở phía client (browser)
+
+  if (typeof window !== 'undefined') {
+    if (
+      ['auth/login', 'auth/register'].some(
+        (item) => item === normalizePath(url)
+      )
+    ) {
+      clientSessionToken.value = (payload as LoginResType).data.token
+    } else if ('auth/logout' === normalizePath(url)) {
+      clientSessionToken.value = ''
+    }
   }
+  
+  // if (['/auth/login', '/auth/register'].includes(url)) {
+  //   clientSessionToken.value = (payload as LoginResType).data.token
+  // } else if ('/auth/logout'.includes(url)) {
+  //   clientSessionToken.value = ''
+  // }
   return data
 }
 
