@@ -34,12 +34,18 @@ const authApiRequest = {
     ),
 
   // này là từ client lên serve của nextjs
-  logoutFromNextClientToNextServer: () =>
+  logoutFromNextClientToNextServer: (
+    force?: boolean | undefined,
+    signal?: AbortSignal | undefined
+  ) =>
     http.post<MessageResType>(
       "/api/auth/logout",
-      {},
+      {
+        force
+      },
       {
         baseUrl: "",
+        signal
       }
     ),
 };
